@@ -65,13 +65,17 @@ Verify with:
 Summarize in 5-8 lines. Wait for direction.
 ```
 
-The agent reads both files, runs the verification, and reports back. If git shows commits past what STATE.md claims, you'll hear about it. If the working tree is dirty when it shouldn't be, you'll hear about it. Then it waits — `auto OFF` by default, because you don't want a fresh session diving into changes before you've confirmed direction.
+The agent reads both files, runs the verification, and reports back. If git shows commits past what STATE.md claims, you'll hear about it. If the working tree is dirty when it shouldn't be, you'll hear about it. If a manual check you owed last session is still open, it asks. Then it waits — `auto OFF` by default, because you don't want a fresh session diving into changes before you've confirmed direction.
+
+Pass an argument to focus the orientation: `/relay-start search ranking` surfaces the decisions, risks, and roadmap items relevant to *that*, not just the default top-of-file view.
 
 ### End of every session: `/relay-end`
 
-The agent walks through the STATE.md edits — updates current state, prepends a dated decision block, edits the watch-list (resolved items get deleted, not commented out), adds a milestone bullet if you closed one, updates the roadmap. Then it stops, shows you the diff, and asks if it should commit.
+The agent walks through the STATE.md edits — updates current state, prepends one dated decision block for the session (one-line bullets, commit refs), edits the watch-list (resolved items get deleted, not commented out), adds a milestone bullet if you closed one, updates the roadmap. It rotates old entries into `STATE_archive/` automatically past thresholds, then checks the file against its size budget (`wc -l`) before showing you anything. Then it stops, shows you the diff, and asks if it should commit.
 
 You inspect. You approve. It commits. Done.
+
+Pass an argument to shape the handoff: `/relay-end export formats next` biases the "Next" line and suggested skills toward what the following session will tackle. And when an old STATE.md has drifted verbose, `/relay-end compact` runs a retroactive cleanup pass — same review-before-commit discipline.
 
 ---
 
@@ -98,12 +102,12 @@ Edited rarely. Read once per session. Contains:
 Edited every session. Read top-to-bottom on fresh sessions. Sections in order:
 
 1. **Starter prompt** — paste-ready block for fresh sessions
-2. **Current state** — commit SHA, test count, what just landed, what's next, anything you owe a manual check
-3. **Watch-list** — active risks only. `🚧` deferred, `⚠️` known risk with mitigation, `🟡` low-priority observation. Resolved items get *deleted*, not buried in HTML comments
-4. **Decisions log** — dated blocks, newest first. The "why" behind every locked choice
+2. **Current state** — commit SHA, test count, what just landed, what's next, suggested skills for the next task, anything you owe a manual check
+3. **Watch-list** — active risks only. `🚧` deferred, `⚠️` known risk with mitigation, `🟡` low-priority observation. Resolved items get *deleted*, not buried in HTML comments; stale ones get age-checked
+4. **Decisions log** — one dated block per session, newest first, one-line bullets with commit refs. The "why" behind every locked choice; reversed decisions get superseded in place, never left contradicting
 5. **Milestones shipped** — one bullet per phase / sprint / feature. Quick trajectory scan
-6. **Roadmap** — what's not yet done
-7. **Open questions** — anything unresolved
+6. **Roadmap** — what's not yet done. Completed items stripped, stale aspirations age-checked
+7. **Open questions** — anything unresolved. Deleted once answered
 8. **Useful commands** — tests, build, lint, the stuff you keep grep'ing your shell history for
 9. **Session log** — optional, usually empty. The decisions log covers 95% of the "why"
 
@@ -123,17 +127,19 @@ These aren't arbitrary. Each one is a reaction to a specific failure mode.
 
 **Fresh-evidence verification.** Before claiming "tests 187/187 passing," the agent runs the tests. Before claiming `commit a3f9c12 is current`, it runs `git log -1`. No carrying over stale claims from the previous session.
 
-**Composition hints, not gates.** The "Next" line can carry English directives — `(needs brainstorming first)`, `(≥3 steps — plan first)`, `(TDD applies)` — that work whether the next agent has specialized skills installed or just applies the discipline inline.
+**Suggested skills, not gates.** relay-end records 0–3 skills relevant to the *next* task — `<skill-name> (<short reason>)` — drawn from whatever is actually installed, no fixed vocabulary, no plugin dependency. relay-start honors them: a skill that runs before coding doesn't get skipped; a review or debugging aid gets mentioned. Without the skill installed, the reason alone tells the next agent what discipline to apply inline.
 
-**Scope filter.** Project-specific working memory only. Off-project chat — tooling discussions, philosophical asides, debates about other projects — doesn't pollute the relay docs. Each line in STATE.md is read cold by every fresh session; respect that cost.
+**Scope filter + recoverability test.** Project-specific working memory only — and even on-project content earns its place only if a fresh agent couldn't recover it from the code or `git log`. STATE.md holds the *why* and the *rejected alternative*, not a changelog of *what* happened. Each line is read cold by every fresh session; respect that cost.
+
+**Bounded by design.** Left alone, a state file grows monotonically until every session pays to read the whole project's history. Relay refuses that: decision entries default to one line; reversed decisions get superseded in place instead of contradicting from the archive; watch-list, roadmap, and open-question entries get age-checked and deleted; sections rotate into `STATE_archive/` automatically past numeric thresholds; and relay-end measures the file (`wc -l`, ~350-line budget) after every edit — so a budget miss is caught the session it happens, not five sessions later. For files that predate these rules, `/relay-end compact` cleans up retroactively.
 
 ---
 
 ## Composes with your existing tools
 
-If you use [superpowers](https://github.com/anthropics/skills) or similar skill packages, Relay defers cleanly. `/relay-start` is the entry-point skill; once it's done orienting, normal skill-gate logic applies for whatever you direct next — brainstorming for new features, plan-first for multi-step work, TDD for production code.
+If you use skill packages — planning skills, TDD skills, review skills, whatever — Relay defers cleanly and names none of them. `/relay-start` is the entry-point skill; once it's done orienting, it hands off to whatever STATE.md's "Suggested skills" line points at, populated by the previous session's relay-end from what was actually installed at the time.
 
-Without those skills installed, the same hints in STATE.md "Next" still work as English directives. The convention is self-sufficient.
+Without any of those installed, the same line still works as a plain-English directive — the reason attached to each suggestion tells the next agent what discipline to apply inline. The convention is self-sufficient.
 
 ---
 

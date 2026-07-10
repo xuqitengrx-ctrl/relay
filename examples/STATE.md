@@ -1,6 +1,6 @@
 # STATE.md — Living state
 
-> **Edit cadence:** every relay-end. Single source of truth for current state, decisions log, watch-list, milestones, roadmap. Stable rules live in `AGENTS.md`.
+> **Edit cadence:** every relay-end. Single source of truth for current state, decisions log, watch-list, milestones, roadmap. Stable rules live in `AGENTS.md`. **Size budget:** ~250-350 lines steady-state — every fresh session reads this file in full.
 
 ---
 
@@ -33,7 +33,8 @@ Default mode: auto OFF — discuss / propose before acting.
 - **Commit:** `a3f9c12` (Phase 4 close — tag filtering + bulk operations)
 - **Tests:** 187/187 passing
 - **Last landed:** Phase 4 — tag CRUD + bulk tag operations (`add-tag` / `remove-tag` / `rename-tag` subcommands). Tag completion in shell installer.
-- **Next:** Phase 5 — search ranking improvements (needs brainstorming first — UX is ambiguous on whether recency-boost is desirable for note-taking vs. pure-relevance ranking).
+- **Next:** Phase 5 — search ranking improvements.
+- **Suggested skills:** `brainstorming (recency-boost vs pure-relevance UX unresolved)`
 - **Pending verification:** none.
 - **Working tree:** clean.
 
@@ -55,23 +56,26 @@ Default mode: auto OFF — discuss / propose before acting.
 
 ### 2026-03-12 — Phase 4: tag CRUD + bulk operations
 
-Commit `a3f9c12`, +1,240 / -89 across 18 files. Adds `add-tag` / `remove-tag` / `rename-tag` subcommands; bulk variants take a `--query` flag for "apply to all notes matching X". Tag completion installed via `clap_complete` for bash/zsh/fish. Reviewer found one Important: `rename-tag` silently merges if target exists — accepted as v1 behavior, watch-list entry added for `--no-merge` flag in v1.6.
+- Bulk tag ops take a `--query` flag ("apply to all notes matching X"), over positional note-ID lists, because query reuse matches the search-first workflow (`a3f9c12`)
+- `rename-tag` silently merges on target collision — reviewer flagged it; accepted as v1 behavior, `--no-merge` flag deferred (watch-list)
 
 ### 2026-03-08 — Phase 3: full-text search via FTS5
 
-Commits `9e4a118`..`b7c2d33`. FTS5 virtual table + trigger-based content sync; porter stemmer + unicode61 tokenizer. Closing reviewer surfaced the CJK tokenization gap (now ⚠️ in watch-list). Tantivy briefly re-evaluated at reviewer's suggestion; rejected again — 3MB binary bloat + index-step friction not worth the 2x search speedup at 10k notes.
+- Trigger-based FTS content sync, over app-level index writes, because triggers can't drift from the source tables (`9e4a118`..`b7c2d33`)
+- Tantivy re-evaluated at reviewer's suggestion; rejected again — 3MB binary bloat + build-time index step not worth the 2x speedup at 10k notes
+- CJK tokenization gap surfaced (unicode61 splits per-character) → documented limitation, ⚠️ watch-list
 
 ### 2026-03-04 — Phase 2: SQLite schema + migrations
 
-Commits `4a8b201`..`d12c9e0`. 4-table schema (notes, tags, note_tags, fts_index). Migrations run on every startup with version check at `schema_version` table. Forward-only design locked — no rollback support in v1 (see watch-list).
+- Forward-only migrations locked, over rollback support, because v1 schema churn is low and rollback machinery isn't worth it — a rollback-requiring change forces a workaround (🟡 watch-list) (`4a8b201`..`d12c9e0`)
 
 ### 2026-03-01 — Phase 1: clap CLI scaffolding + binary skeleton
 
-Commit `7c19f44`. `cargo new --bin acme-notes` baseline. clap subcommand structure (add / list / show / search / tag operations). All subcommands return `Result<ExitCode>`; errors print to stderr with a stable error code mapping (1 = user error, 2 = data error, 3 = internal).
+- Stable exit-code mapping locked: 1 = user error, 2 = data error, 3 = internal (`7c19f44`)
 
 ### 2026-02-27 — Phase 0: design consultation + locked decisions
 
-Brainstorm session produced `docs/DESIGN.md` + `docs/IMPLEMENTATION_PLAN.md`. Key locks: local-first / single-binary v1, SQLite+FTS5 over Tantivy, flat tag namespace, no async. Sync server explicitly deferred.
+- Key locks (full rationale in `docs/DESIGN.md`): local-first single-binary v1, SQLite+FTS5 over Tantivy, flat tag namespace, no async; sync server deferred to v1.5
 
 ---
 

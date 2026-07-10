@@ -129,6 +129,8 @@ Don't commit without confirmation.
 ## Core conventions / locked decisions
 
 > Non-negotiables. Future maintenance depends on these. When a decision is locked (user says "don't revisit"), record it here so future sessions don't relitigate.
+>
+> Same recoverability test as STATE.md's decisions log: if it's obvious from reading the code, it doesn't need a slot here. Reserve this for things that would NOT be rediscovered just by reading the codebase.
 
 [Populate as decisions land. Each entry: short bold heading, then 1-3 sentences of rationale. Examples of patterns that prove load-bearing:
 - Storage / namespacing conventions (e.g., prefix on shared keys to prevent collisions)
@@ -141,6 +143,8 @@ Don't commit without confirmation.
 ---
 
 ## What NOT to do
+
+> Keep entries one line where possible. Cut any that are now enforced by a test, lint rule, or type — the tooling is the record at that point, not this file.
 
 [Populate as failure modes surface. Each entry: specific action that hurt + why. The goal is to prevent re-treading dead ends.
 
@@ -155,7 +159,7 @@ Don't commit without confirmation.
 
 2. **2-action findings save.** After 2 substantial discoveries (file inspections that surfaced non-obvious behavior, greps with new info, web fetches that resolved a question), pause and ask: *does what I just learned belong in STATE.md watch-list, or as a comment in the affected source file?* Discoveries lost to context are unrecoverable.
 
-3. **Plan-first for ≥3-step work.** Before any task crossing ≥3 files or ≥3 logical steps, re-read STATE.md decisions log + watch-list{IF_PLAN: + the relevant phase in `IMPLEMENTATION_PLAN.md`}. Compose with `superpowers:writing-plans` if installed; otherwise plan inline before coding.
+3. **Plan-first for ≥3-step work.** Before any task crossing ≥3 files or ≥3 logical steps, re-read STATE.md decisions log + watch-list{IF_PLAN: + the relevant phase in `IMPLEMENTATION_PLAN.md`}. Compose with a planning skill if one is installed and relevant; otherwise plan inline before coding.
 
 4. **Per-milestone reviewer discipline.** After every major milestone (phase, sprint, vertical-slice), dispatch an independent reviewer agent (Agent tool, general-purpose, model="opus", fresh context) before starting the next. Pass: commit range, relevant spec sections, hardening patterns followed. Ask for: spec compliance, cross-milestone consistency, invariants, test coverage, severity matrix (Critical / Important / Minor / Nit). This catches real Critical bugs unit tests miss. Don't skip.
 
@@ -196,7 +200,7 @@ Don't commit without confirmation.
 ```markdown
 # STATE.md — Living state
 
-> **Edit cadence:** every relay-end. Single source of truth for current state, decisions log, watch-list, milestones, roadmap. Stable rules live in `AGENTS.md` (rarely edited).
+> **Edit cadence:** every relay-end. Single source of truth for current state, decisions log, watch-list, milestones, roadmap. Stable rules live in `AGENTS.md` (rarely edited). **Size budget:** target ~250-350 lines steady-state — the per-section rotation rules below enforce this automatically, since every `relay-start` reads this file in full.
 
 ---
 
@@ -226,7 +230,8 @@ Default mode: auto OFF — discuss / propose before acting.
 - **Commit:** [SHA — bump every relay-end]
 - **Tests:** [N/N if applicable, or omit line]
 - **Last landed:** [milestone or session summary, 1-2 sentences]
-- **Next:** [next milestone or task; append `(needs brainstorming first)` / `(≥3 steps — plan first)` / `(TDD applies)` as composition hints]
+- **Next:** [next milestone or task, one line]
+- **Suggested skills:** [0-3 entries in the form `<skill-name> (<short reason>)`, using whatever is actually installed in the current environment — not a fixed set. Write `none` if the next task is mechanical]
 - **Pending verification:** [manual checks user owes, or "none"]
 - **Working tree:** clean
 
@@ -239,7 +244,7 @@ Default mode: auto OFF — discuss / propose before acting.
 > - ⚠️ known risk with mitigation in place or planned
 > - 🟡 noted observation, low priority
 >
-> When an item resolves, REMOVE it (the resolution is captured in the Decisions log + git history). Don't leave resolved items as HTML-commented-out clutter.
+> When an item resolves, REMOVE it (the resolution is captured in the Decisions log + git history). Don't leave resolved items as HTML-commented-out clutter. Age-check on every relay-end: an item carried unchanged for many sessions either still matters (keep), matters only to a far milestone (fold into that roadmap entry), or doesn't (delete).
 
 [Populate as risks surface. Each entry: `<symbol> **<short name>.** <description>. <mitigation or v-next plan>.`]
 
@@ -247,15 +252,16 @@ Default mode: auto OFF — discuss / propose before acting.
 
 ## Decisions log (newest first)
 
-> Dated blocks, no numbering. Prepend new entries at top. Absorbs both structured-decision and narrative-why roles. Each block is the "why" — what was decided, what was rejected, commit refs.
+> One dated block per session, prepended at top, no numbering. Each decision under the heading is a sub-bullet — default one line; expand to 2-4 sentences only if the one-liner would leave an obvious "why not X" unanswered. Apply the recoverability test: if it's obvious from reading the code or `git log`, leave it out. Supersede in place: a decision reversed later gets deleted or folded into the newer entry — never two live entries giving opposite guidance.
 >
-> **Rotation:** when this section exceeds ~20 entries, archive older blocks (`STATE_archive/decisions-YYYY-QN.md`) and keep the last ~10-15 here.
+> **Rotation is automatic:** when this section exceeds ~20 entries, `relay-end` archives the oldest down to ~12 into `STATE_archive/decisions-YYYY-QN.md` as part of the normal edit — not a suggestion, not gated on asking. This keeps every future `relay-start`'s full-file read cheap regardless of project age. Bloated pre-existing entries (predating this rule) can be retroactively reformatted with `relay-end`'s compaction mode.
 
 [New entries land here. Template:
 
-### YYYY-MM-DD — <bold one-line summary>
+### YYYY-MM-DD — <session summary in a few words>
 
-<4-8 sentences. Commit refs (`abc1234`), file:line where relevant. What was decided, alternatives rejected, anything a fresh agent would need to continue from here.>
+- <decision>, over <rejected alternative>, because <reason> (`abc123`)
+- <decision 2> (`def456`)
 ]
 
 ---
@@ -263,6 +269,8 @@ Default mode: auto OFF — discuss / propose before acting.
 ## Milestones shipped
 
 > Historical "what's done" anchor. One bullet per significant milestone (phase, sprint, feature, vertical-slice). Provides quick scan of trajectory without reading every decision-log entry.
+>
+> **Rotation:** past ~15 entries, collapse the oldest into a single grouped line (e.g. "Earlier milestones (2026-01–03): core pipeline, auth, billing — see git tags"). Git history already preserves the detail losslessly; no separate archive file needed.
 
 [Populate as milestones land. Format:
 
@@ -280,6 +288,8 @@ Default mode: auto OFF — discuss / propose before acting.
 ---
 
 ## Open questions
+
+> Same discipline as watch-list: delete a question once it resolves — the answer lives in the decision that resolved it, not in a leftover "RESOLVED" note.
 
 [Populate as questions surface. Each: `🟡 **<topic>** — <question>. <context for resolution>.`]
 
@@ -306,7 +316,7 @@ Default mode: auto OFF — discuss / propose before acting.
 
 > **Most sessions don't need an entry here** — the decisions log captures the "why" with commit refs. Add a Session block ONLY when the session involved substantial prose that doesn't fit decision-block format (long debates, rejected alternatives with extensive detail, user-preference shifts).
 >
-> **Rotation:** when this section exceeds ~10 entries, archive older sessions into `STATE_archive/sessions-YYYY-QN.md` and keep the last ~5 here.
+> **Rotation is automatic:** when this section exceeds ~10 entries, `relay-end` archives the oldest down to ~5 into `STATE_archive/sessions-YYYY-QN.md` as part of the normal edit.
 
 [Optional Session entries. Template:
 

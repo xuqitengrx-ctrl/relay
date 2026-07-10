@@ -1,6 +1,6 @@
 ---
 name: relay-start
-description: Fresh-session orientation for the 2-file relay convention (AGENTS.md + STATE.md). Reads both files top-to-bottom, verifies git SHA + working tree, surfaces drift, summarizes in 5-8 lines, and waits for direction. Does not auto-code. Composes cleanly with superpowers if installed.
+description: Fresh-session orientation for the 2-file relay convention (AGENTS.md + STATE.md). Reads both files top-to-bottom, verifies git SHA + working tree, surfaces drift, summarizes in 5-8 lines, and waits for direction. Does not auto-code. Composes cleanly with other skills if installed, but doesn't depend on any specific plugin.
 allowed-tools: Read, Bash, Grep, Glob
 ---
 
@@ -10,6 +10,10 @@ You are picking up a project cold. Goal: arrive at a 5-to-8-line summary of curr
 
 **You do NOT start coding. You read, verify, summarize, and wait.**
 
+## Session-focus argument (optional)
+
+If the user passed arguments to this skill invocation, treat them as a description of what *this* session will focus on. Use it to prioritize which watch-list items, decisions, and roadmap entries to surface in the summary (step 6) — surface focus-relevant ones even if they'd otherwise fall outside the default top-3-5 window — and to sharpen the proposed next step (step 7). Verification steps (4/5) still run in full regardless of args.
+
 ## Step-by-step
 
 ### 1. Pre-flight
@@ -18,18 +22,18 @@ Use `Glob` to confirm `AGENTS.md` and `STATE.md` exist at the project root. If e
 
 ### 2. Read AGENTS.md (stable rules)
 
-`Read: AGENTS.md` (full). Note: core conventions / locked decisions, what-NOT-to-do failure modes, the four always-on rules (3-strike, 2-action save, plan-first, per-milestone reviewer), repo layout.
+First check whether AGENTS.md's content is already in your context — many harnesses auto-inject it, or the project's CLAUDE.md is a copy/symlink of it. If so, don't Read it again; work from what's loaded. Otherwise `Read: AGENTS.md` (full). Note: core conventions / locked decisions, what-NOT-to-do failure modes, the always-on rules, repo layout.
 
 This file should rarely surprise you across sessions — it's the stable half. If something looks out of place (a watch-list item, a "Last updated" snapshot, a commit SHA), there's drift between AGENTS.md and STATE.md. Flag it in step 6.
 
 ### 3. Read STATE.md (living state)
 
-`Read: STATE.md` top-to-bottom. Sections in order:
+For a well-rotated file (see relay-end's STATE.md size budget), `Read: STATE.md` top-to-bottom in one shot — it's cheap. If the file looks large (gut check, or `wc -l STATE.md` past ~400), read surgically instead: full-read everything except the Decisions log, then for that section scan just the `### ` dated headings (`grep -n '^### ' STATE.md`) and read only the top 3-5 blocks in full. A bloated, unrotated decisions log is a sign relay-end's rotation was skipped or predates that rule — don't compensate by reading the whole thing anyway; flag it in step 6 instead. Sections in order:
 
 1. **Starter prompt** — confirms read-order; you've done step 2 already
-2. **Current state** — the canonical snapshot you'll verify in step 4. Note: claimed commit SHA, test count, what's done, what's next, pending verification, composition hints in "Next"
+2. **Current state** — the canonical snapshot you'll verify in step 4. Note: claimed commit SHA, test count, what's done, what's next, pending verification, and the "Suggested skills" line
 3. **Watch-list** — 🚧 / ⚠️ / 🟡 items that may block or shape the next task
-4. **Decisions log** — top 3-5 dated blocks. Load-bearing for any task touching related code. Scan deeper only for deep-history topics
+4. **Decisions log** — top 3-5 dated blocks. Load-bearing for any task touching related code. Scan deeper only for deep-history topics. If a question needs history older than what's here, check `STATE_archive/*.md` if present
 5. **Milestones shipped** — quick trajectory scan
 6. **Roadmap** — what's pending
 7. **Open questions** — anything unresolved
@@ -74,18 +78,21 @@ Tight summary. The user reads this to confirm you read correctly:
 - The most-recent landed milestone + any reviewer fix-pass that followed
 - The 1-2 most load-bearing decisions or watch-list items affecting the next chunk — **cite by date or symbol** (cited specifics prove you read; vague references don't)
 - Any drift surfaced in step 4 / 5
-- The next milestone / task per STATE.md "Current state" — including any composition hints (e.g., "needs brainstorming first", "≥3 steps — plan first")
+- Any non-"none" Pending verification items — ask whether the user has done them; nothing else in the loop ever closes these, so an unasked item persists forever
+- The next milestone / task per STATE.md "Current state" — including any suggested skills listed there
 
 5 lines minimum, 8 maximum.
 
-### 7. Propose next step + honor composition hints
+Check the objective signal, not vibes: `wc -l STATE.md`, or count decisions-log headings (`grep -c '^### ' STATE.md`, restricted to that section). If total length exceeds ~350 lines, or the decisions log holds more than ~20 entries (meaning relay-end's automatic rotation was skipped or predates that rule), name the actual number and suggest a `relay-end` compaction pass. This is a soft nudge only — never block orientation on it.
 
-Read STATE.md "Current state" → "Next" line. It may include a composition hint:
+### 7. Propose next step + honor suggested skills
 
-- **"needs brainstorming first"** → propose: "Next is <task>. Will brainstorm before any implementation (`superpowers:brainstorming` if installed, otherwise inline)." Do NOT propose to start coding.
-- **"≥3 steps — plan first"** → propose: "Next is <task>, ≥3 steps. Will write a plan first (`superpowers:writing-plans` if installed, otherwise inline plan)."
-- **"TDD applies"** → mention: "Next is <task>. TDD discipline applies."
-- **No hint** → if the next task is plainly creative (new feature, ambiguous requirements), recommend brainstorming. If plainly mechanical (rename, refactor, dependency bump), propose direct execution. If ambiguous, ask.
+Read STATE.md "Current state" → "Next" line, and the "Suggested skills" line alongside it. For each suggested skill, judge by what it would do, not its name:
+
+- **Would run before any code is written** (scopes ambiguous requirements, plans multi-step work, sets up a test-first approach, or equivalent) → propose invoking it before coding: "Next is <task>. Will <do that> first (`<skill>` if installed, otherwise inline)." Do NOT propose to skip straight to implementation.
+- **Would run alongside or after** (a review, a debugging aid, or equivalent) → mention it's relevant and available; let the user decide when to invoke it.
+
+**"Suggested skills: none" or empty** → if the next task is plainly creative (new feature, ambiguous requirements), recommend scoping/discussing the approach before implementation anyway. If plainly mechanical (rename, refactor, dependency bump), propose direct execution. If ambiguous, ask.
 
 **Default mode is auto OFF** for relay-start. Propose; don't execute. Even a "small fix" requires user confirmation here.
 
@@ -98,7 +105,7 @@ Last line: a short prompt like "Ready when you are — confirm direction or redi
 - **Read in order: AGENTS.md → STATE.md.** Stable rules first, then living state on top.
 - **Verify SHA + working tree.** Cheap checks; the safety net for stale STATE.md.
 - **Cite specifics by date or symbol.** Concrete citations prove you read; vague mentions don't.
-- **Honor composition hints from relay-end.** If "Next" says "needs brainstorming," don't propose to skip it.
+- **Honor suggested skills from relay-end.** If one that runs before coding is listed, don't propose to skip it.
 
 ## Things you must NOT do
 
@@ -110,22 +117,16 @@ Last line: a short prompt like "Ready when you are — confirm direction or redi
 
 ## When to flag drift loudly
 
-- Working tree dirty when STATE.md claims clean → STOP, ask before proceeding
+- Working tree dirty when STATE.md claims clean → STOP, ask before proceeding (it may also be another live session's WIP — don't touch it)
 - Test count mismatch (if you ran tests per step 4 triggers) → name the delta, ask
 - Last commit SHA mismatch → list commits between STATE.md-SHA and HEAD, ask whether trusted
 - Watch-list 🚧 item directly blocking proposed next step → flag with workaround or deferral
 - AGENTS.md contains current-state content (commit SHA, Last updated table) → drift between AGENTS / STATE; flag for cleanup
 
-## Composition with superpowers (if installed)
+## Composition with other skills (if any are installed)
 
-This skill is the orientation entry point. After step 7, normal skill-gate logic applies for whatever the user directs:
+This skill is the orientation entry point. STATE.md's "Suggested skills" line is the general mechanism for pointing at what's next — relay doesn't assume any particular plugin or fixed vocabulary. relay-end populates that line with whatever's genuinely relevant AND actually installed in the environment, or leaves it `none`. After step 7, invoke whichever of those the user confirms, if any.
 
-- `superpowers:brainstorming` — fires before new-feature implementation
-- `superpowers:writing-plans` — fires before ≥3-step work
-- `superpowers:test-driven-development` — fires for production-code changes
-- `superpowers:systematic-debugging` — fires for any reported bug
-- `superpowers:verification-before-completion` — fires before claiming work done
+relay-start does not preempt those skills; it precedes them. Once you've oriented and the user confirms direction, invoke whatever the "Suggested skills" line points at.
 
-relay-start does not preempt these. It precedes them; once you've oriented and the user confirms direction, invoke whichever superpowers skill applies. The conflict with `using-superpowers` ("invoke skill before any response") is satisfied by relay-start itself being a skill — once it's running, you're compliant.
-
-**Without superpowers installed:** the composition hints in STATE.md "Next" line (e.g., "needs brainstorming first") still apply as English directives — brainstorm / plan / verify inline before coding. The relay convention is self-sufficient and does not require superpowers.
+**If nothing relevant is installed:** the "Suggested skills" line still applies as a plain-English directive — read the reason given, and apply that same discipline inline before coding rather than skipping it. The relay convention is self-sufficient and does not require any other skill or plugin.
