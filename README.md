@@ -109,7 +109,6 @@ Edited every session. Read top-to-bottom on fresh sessions. Sections in order:
 6. **Roadmap** — what's not yet done. Completed items stripped, stale aspirations age-checked
 7. **Open questions** — anything unresolved. Deleted once answered
 8. **Useful commands** — tests, build, lint, the stuff you keep grep'ing your shell history for
-9. **Session log** — optional, usually empty. The decisions log covers 95% of the "why"
 
 ---
 
@@ -125,13 +124,15 @@ These aren't arbitrary. Each one is a reaction to a specific failure mode.
 
 **Strip resolved items.** When a watch-list risk resolves, delete it. The fix is in the decisions log and git history; leaving HTML-commented `<!-- RESOLVED -->` blocks behind just clutters every future read.
 
+**Written from the diff, not from memory.** At the end of a long session the agent's context holds every abandoned approach and superseded plan, and they feel important because it just lived them. relay-end sources each entry from `git log` / `git show` and the code as it stands, so deliberation doesn't leak into the record.
+
 **Fresh-evidence verification.** Before claiming "tests 187/187 passing," the agent runs the tests. Before claiming `commit a3f9c12 is current`, it runs `git log -1`. No carrying over stale claims from the previous session.
 
 **Suggested skills, not gates.** relay-end records 0–3 skills relevant to the *next* task — `<skill-name> (<short reason>)` — drawn from whatever is actually installed, no fixed vocabulary, no plugin dependency. relay-start honors them: a skill that runs before coding doesn't get skipped; a review or debugging aid gets mentioned. Without the skill installed, the reason alone tells the next agent what discipline to apply inline.
 
-**Scope filter + recoverability test.** Project-specific working memory only — and even on-project content earns its place only if a fresh agent couldn't recover it from the code or `git log`. STATE.md holds the *why* and the *rejected alternative*, not a changelog of *what* happened. Each line is read cold by every fresh session; respect that cost.
+**Scope filter + recoverability test.** Project-specific working memory only — and even on-project content earns its place only if a fresh agent couldn't recover it from the code or `git log`. STATE.md holds the *why* and the constraint, never a changelog of *what* happened. An approach you rejected earns a line only if a future agent would plausibly propose it again; it never shipped, so it has no other claim on the record. Each line is read cold by every fresh session; respect that cost.
 
-**Bounded by design.** Left alone, a state file grows monotonically until every session pays to read the whole project's history. Relay refuses that: decision entries default to one line; reversed decisions get superseded in place instead of contradicting from the archive; watch-list, roadmap, and open-question entries get age-checked and deleted; sections rotate into `STATE_archive/` automatically past numeric thresholds; and relay-end measures the file (`wc -l`, ~350-line budget) after every edit — so a budget miss is caught the session it happens, not five sessions later. For files that predate these rules, `/relay-end compact` cleans up retroactively.
+**Bounded by design.** Left alone, a state file grows monotonically until every session pays to read the whole project's history. Relay refuses that: decision entries default to one line; reversed decisions get superseded in place instead of contradicting from the archive; watch-list, roadmap, and open-question entries get age-checked and deleted; sections rotate into `STATE_archive/` automatically past numeric thresholds; and relay-end works net-zero by default, so adding a line means finding one to delete, with the file measured (`wc -l`, ~350-line budget) after every edit. For files that predate these rules, `/relay-end compact` cleans up retroactively.
 
 ---
 

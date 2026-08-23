@@ -126,11 +126,3 @@ rm -rf ~/.local/share/acme-notes/*.db*
 # Inspect FTS index
 sqlite3 ~/.local/share/acme-notes/notes.db "SELECT * FROM fts_index LIMIT 10"
 ```
-
----
-
-## Session log
-
-> Not used by default. Decisions log covers the "why." Add Session blocks only for prose that doesn't fit decision-block format.
-
-_(Empty)_
