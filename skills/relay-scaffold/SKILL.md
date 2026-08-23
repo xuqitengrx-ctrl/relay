@@ -6,98 +6,47 @@ allowed-tools: Read, Write, Bash, Glob
 
 # relay-scaffold — bootstrap the 2-file relay convention
 
-You are setting up the two canonical files that relay-start and relay-end consume. After this skill runs, fresh sessions read these files to resume cleanly; end-of-session work updates STATE.md via relay-end.
+Creates exactly two files at the project root. Touch nothing else.
 
-The two files:
-
-| File | Purpose | Edit cadence |
+| File | Holds | Cadence |
 |---|---|---|
-| `AGENTS.md` | Stable rules — conventions, locked decisions, always-on rules, repo layout. Read once per session. | Rare. |
-| `STATE.md` | Living state — starter prompt, current snapshot, watch-list, decisions log, milestones, roadmap. | Every relay-end. |
+| `AGENTS.md` | Non-negotiables, locked decisions, conventions | Rare |
+| `STATE.md` | Snapshot, watch-list, decisions, milestones, roadmap | Every relay-end |
 
-**Why only two:** earlier 4-file conventions (AGENTS / MEMORY / CHAT / HANDOFF_PROMPT) duplicate ~40% of content across files, create three sources of truth for "current state," and require renumber-prone decision lists. The 2-file convention has one stable doc, one living doc, no cross-file drift physically possible.
+**The templates ship nearly empty on purpose.** Project content accumulates as the project lives;
+pre-filling it invents facts. Bracketed hints are for whoever populates the section — delete each
+hint as its section fills, so instruction text never becomes permanent freight in a file that every
+future session reads in full.
 
-**You do NOT touch any other project files.** This skill creates exactly two markdown files at the project root.
+## Steps
 
-## Step-by-step
+**1. Pre-flight.** `pwd && ls -la`. Confirm a project root (`.git/` at minimum). No `.git/` → ask
+whether to init or whether you're in the wrong directory.
 
-### 1. Pre-flight
+**2. Detect.** Glob for `AGENTS.md` and `STATE.md`. Either exists → ask overwrite / skip / merge,
+default **skip**. Another convention in place (`MEMORY.md`, `CONTEXT.md`, `NOTES.md`) → say what's
+there and offer to skip or scaffold alongside. **Never auto-migrate**; consolidation is the user's
+call, not this skill's scope.
 
-```bash
-pwd && ls -la
-```
+**3. Ask three questions**, all skippable: what the project is (1–2 sentences), tech stack
+one-liner, and whether a `DESIGN.md` and/or `IMPLEMENTATION_PLAN.md` should join the read-order.
 
-Confirm:
-- The cwd looks like a project root (`README.md`, `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, etc., or at minimum `.git/`)
-- If `.git/` is missing, ask: "Initialize git here, or am I in the wrong directory?"
-
-### 2. Detect existing files
-
-Use `Glob` to check for `AGENTS.md` and `STATE.md` at the project root.
-
-If either exists, surface it and ask: "Overwrite, skip, or merge into existing?" Default to **skip** unless the user explicitly says overwrite.
-
-If you find some other docs convention in place (e.g., `MEMORY.md`, `CONTEXT.md`, `NOTES.md`), don't auto-migrate. Tell the user what's there and ask whether to:
-- Skip scaffolding (their convention is fine)
-- Scaffold alongside (relay convention lives next to theirs)
-- Manually consolidate later (one-time migration — not in this skill's scope)
-
-### 3. Gather minimal context (3 questions, conversational)
-
-1. **What is this project?** (1-2 sentences — feeds AGENTS.md "What this project is")
-2. **Tech stack one-liner?** (optional — feeds AGENTS.md "Tools, framework, idioms")
-3. **Does the project have a `DESIGN.md` / spec doc and/or `IMPLEMENTATION_PLAN.md` / build plan you want referenced in the read-order?** (yes/no each)
-
-"Skip" is valid for all three; templates ship with `[fill in]` placeholders.
-
-### 4. Create the two files
-
-Use the templates below. Substitute:
+**4. Write both files** from the templates below, substituting:
 
 | Placeholder | Source |
 |---|---|
-| `{PROJECT_NAME}` | Short identifier (1-3 words; user provides or derive from cwd basename) |
-| `{PROJECT_PATH}` | Absolute path to project root (from `pwd`) |
-| `{PROJECT_DESCRIPTION}` | Answer to Q1, or `[fill in]` |
-| `{TECH_STACK}` | Answer to Q2, or `[fill in]` |
-| `{HAS_DESIGN_DOC}` / `{HAS_PLAN_DOC}` | Booleans from Q3 — drive `{IF_DESIGN: …}` / `{IF_PLAN: …}` conditional lines |
-| `{TODAY}` | Today's date in `YYYY-MM-DD` |
+| `{PROJECT_NAME}` | 1–3 words, from the user or the cwd basename |
+| `{PROJECT_PATH}` | absolute path from `pwd` |
+| `{PROJECT_DESCRIPTION}` / `{TECH_STACK}` | Q1 / Q2, or `[fill in]` |
+| `{IF_DESIGN: …}` / `{IF_PLAN: …}` | keep the inner text if Q3 said yes, else drop the whole span |
+| `{TODAY}` | `YYYY-MM-DD` |
 
-### 5. Initial commit (ask first)
+**5. Commit — ask first.** `git status --short`; if unrelated changes are pending, ask whether to
+commit the two files separately. Otherwise
+`git add AGENTS.md STATE.md && git commit -m "docs: scaffold 2-file relay convention (AGENTS / STATE)"`.
 
-```bash
-git status --short
-```
-
-If working tree has unrelated changes, ask whether to commit the two new files alongside or separately. If fresh project:
-
-```bash
-git add AGENTS.md STATE.md && git commit -m "docs: scaffold 2-file relay convention (AGENTS / STATE)"
-```
-
-Don't commit without confirmation.
-
-### 6. Surface next steps
-
-> The 2-file relay convention is scaffolded. From here:
->
-> 1. **Populate AGENTS.md project-specific sections** as content surfaces: "Core conventions / locked decisions," "What NOT to do," "Repository layout."
-> 2. **Use `/relay-end` at end of each working session** to update STATE.md.
-> 3. **Use `/relay-start` at start of each fresh session** to orient.
-> 4. **Starter prompt for fresh sessions** is at the top of STATE.md — paste-ready.
-
-## Things you must do
-
-- **Pre-flight check.** Don't scaffold in an unrelated directory.
-- **Respect existing files.** Ask before overwriting; default to skip.
-- **Keep templates minimal.** Project-specific content populates as the project evolves.
-
-## Things you must NOT do
-
-- **Don't migrate existing docs conventions.** One-time migrations are user-driven — describe the target structure, let the user consolidate manually.
-- **Don't commit without confirmation.**
-- **Don't pre-fill domain content** (failure modes, watch-list entries, locked decisions). Those accumulate as the project lives.
-- **Don't create extra files** (DESIGN.md, IMPLEMENTATION_PLAN.md, CONTRIBUTING.md, etc.). The scaffold is exactly two files.
+**6. Point at what's next:** `/relay-start` opens a session, `/relay-end` closes one, and both
+files fill in as work lands.
 
 ---
 
@@ -108,91 +57,53 @@ Don't commit without confirmation.
 ```markdown
 # AGENTS.md — Stable rules for agents working on this project
 
-> **Edit cadence:** rare. This file holds non-negotiables, locked decisions, and conventions that don't change session-to-session. Living state (current SHA, decisions log, watch-list, what's next) lives in `STATE.md` and is updated every relay-end.
->
-> **Read order for fresh sessions:** this file (rules), then `STATE.md` (state){IF_DESIGN: , then `DESIGN.md` (spec)}{IF_PLAN: , then `IMPLEMENTATION_PLAN.md` (build plan, relevant phase only)}.
-
----
+> Non-negotiables and locked decisions. Living state is in `STATE.md`.
+> Read order: this file, then `STATE.md`{IF_DESIGN: , then `DESIGN.md`}{IF_PLAN: , then `IMPLEMENTATION_PLAN.md` (relevant phase only)}.
 
 ## What this project is
 
 {PROJECT_DESCRIPTION}
 
----
-
 ## Tools, framework, idioms
 
 {TECH_STACK}
 
----
-
 ## Core conventions / locked decisions
 
-> Non-negotiables. Future maintenance depends on these. When a decision is locked (user says "don't revisit"), record it here so future sessions don't relitigate.
->
-> Same recoverability test as STATE.md's decisions log: if it's obvious from reading the code, it doesn't need a slot here. Reserve this for things that would NOT be rediscovered just by reading the codebase.
-
-[Populate as decisions land. Each entry: short bold heading, then 1-3 sentences of rationale. Examples of patterns that prove load-bearing:
-- Storage / namespacing conventions (e.g., prefix on shared keys to prevent collisions)
-- Cross-project import policies (forbidden / read-only / contract-locked)
-- Test conventions (TDD where applicable / what's tested vs manually verified)
-- Tooling choices (no bundler / specific runner / no codegen)
-- Architectural locks (single source of truth for X / canonical pattern for Y)
-- Naming conventions for cross-cutting concerns]
-
----
+[Reserve for what would NOT be rediscovered by reading the code — storage/namespacing rules,
+cross-project import policy, architectural locks, tooling choices. Short bold heading, then one to
+three sentences. Delete this hint once populated.]
 
 ## What NOT to do
 
-> Keep entries one line where possible. Cut any that are now enforced by a test, lint rule, or type — the tooling is the record at that point, not this file.
-
-[Populate as failure modes surface. Each entry: specific action that hurt + why. The goal is to prevent re-treading dead ends.
-
-- Don't <action> — <past failure mode>
-- Don't <action> — <past failure mode>]
-
----
+[One line each: the action, and the failure it caused. Cut any entry once a test, lint rule or type
+enforces it — at that point the tooling is the record. Delete this hint once populated.]
 
 ## Always-on rules
 
-1. **3-strike protocol.** After 3 failed attempts at the same root cause, stop. Document each attempt (what you tried, what failed, commit ref if you committed-then-reverted). Re-read STATE.md watch-list for a prior note. Then surface to the user.
-
-2. **2-action findings save.** After 2 substantial discoveries (file inspections that surfaced non-obvious behavior, greps with new info, web fetches that resolved a question), pause and ask: *does what I just learned belong in STATE.md watch-list, or as a comment in the affected source file?* Discoveries lost to context are unrecoverable.
-
-3. **Plan-first for ≥3-step work.** Before any task crossing ≥3 files or ≥3 logical steps, re-read STATE.md decisions log + watch-list{IF_PLAN: + the relevant phase in `IMPLEMENTATION_PLAN.md`}. Compose with a planning skill if one is installed and relevant; otherwise plan inline before coding.
-
-4. **Per-milestone reviewer discipline.** After every major milestone (phase, sprint, vertical-slice), dispatch an independent reviewer agent (Agent tool, general-purpose, model="opus", fresh context) before starting the next. Pass: commit range, relevant spec sections, hardening patterns followed. Ask for: spec compliance, cross-milestone consistency, invariants, test coverage, severity matrix (Critical / Important / Minor / Nit). This catches real Critical bugs unit tests miss. Don't skip.
-
----
-
-## Project-specific debugging entries
-
-[Populate as the project evolves. Examples:
-1. **Don't know how X works?** Look at <reference>.
-2. **Y returns unexpected output?** Already handled by Z; don't tighten further.
-3. **Test fails because of W?** Refactor pattern V.]
-
----
+1. **3-strike protocol.** After three failed attempts at the same root cause, stop. Record what
+   was tried and what failed, check the `STATE.md` watch-list for a prior note, then surface it.
+2. **Save findings before they're lost.** After two substantial discoveries, ask whether they
+   belong in the watch-list or as a comment in the affected file. Context is not storage.
+3. **Plan before ≥3-step work.** Re-read the decisions log and watch-list{IF_PLAN: and the relevant
+   plan phase} before any task crossing three files or three logical steps.
+4. **Independent review per milestone.** Dispatch a reviewer with fresh context before starting the
+   next milestone. Give it the commit range and the spec; ask for severity-ranked findings.
 
 ## Repository layout
 
-[Populate when structure stabilizes. Tree sketch of top-level dirs with one-line descriptions.]
-
----
+[Tree sketch, one line per top-level dir. Delete this hint once populated.]
 
 ## Personal context (the user)
 
-[Optional. Role, languages, working preferences (terse vs explained, concrete recommendations vs option trees), cost/time constraints.]
-
----
+[Optional: role, working preferences, constraints.]
 
 ## When you ship a meaningful change
 
-1. Update `STATE.md` decisions log + watch-list if relevant.
-{IF_DESIGN: 2. Update `DESIGN.md` if the spec changes; call out what changed in the commit.}
-{IF_PLAN: 3. Update `IMPLEMENTATION_PLAN.md` if the build sequence shifts.}
-4. Run tests before committing (if applicable).
-5. Bump version (if versioned releases).
+1. Update `STATE.md` decisions log and watch-list if relevant.
+{IF_DESIGN: 2. Update `DESIGN.md` if the spec changed.}
+{IF_PLAN: 3. Update `IMPLEMENTATION_PLAN.md` if the build sequence shifted.}
+4. Run tests before committing.
 ```
 
 ## Template: STATE.md
@@ -200,9 +111,8 @@ Don't commit without confirmation.
 ```markdown
 # STATE.md — Living state
 
-> **Edit cadence:** every relay-end. Single source of truth for current state, decisions log, watch-list, milestones, roadmap. Stable rules live in `AGENTS.md` (rarely edited). **Size budget:** target ~250-350 lines steady-state — the per-section rotation rules below enforce this automatically, since every `relay-start` reads this file in full.
-
----
+> Updated every relay-end. Stable rules are in `AGENTS.md`.
+> Target ~250–350 lines: every `relay-start` reads this file in full.
 
 ## Starter prompt (paste to fresh sessions)
 
@@ -210,8 +120,8 @@ Don't commit without confirmation.
 Continue work on {PROJECT_NAME} at {PROJECT_PATH}.
 
 Read in this order:
-  1. AGENTS.md  — stable rules, conventions, locked decisions, always-on rules
-  2. STATE.md   — current state, decisions log, watch-list, milestones, roadmap (top-to-bottom)
+  1. AGENTS.md  — stable rules, conventions, locked decisions
+  2. STATE.md   — current state, decisions, watch-list, milestones, roadmap
 
 Verify with:
   git log -1 --format='%H %s'
@@ -219,109 +129,47 @@ Verify with:
 
 Summarize in 5-8 lines: SHA, what's done, what's next, drift if any.
 Wait for direction before coding.
-
-Default mode: auto OFF — discuss / propose before acting.
 ```
-
----
 
 ## Current state
 
-- **Commit:** [SHA — bump every relay-end]
-- **Tests:** [N/N if applicable, or omit line]
-- **Last landed:** [milestone or session summary, 1-2 sentences]
-- **Next:** [next milestone or task, one line]
-- **Suggested skills:** [0-3 entries in the form `<skill-name> (<short reason>)`, using whatever is actually installed in the current environment — not a fixed set. Write `none` if the next task is mechanical]
-- **Pending verification:** [manual checks user owes, or "none"]
+- **Commit:** [SHA]
+- **Tests:** [N/N, or omit]
+- **Last landed:** [1-2 sentences]
+- **Next:** [one line]
+- **Suggested skills:** [0-3 installed skills with a short reason, or `none`]
+- **Pending verification:** [manual checks the user owes, or `none`]
 - **Working tree:** clean
-
----
 
 ## Watch-list
 
-> Active risks, deferred items, sister-project drift. Symbols:
-> - 🚧 in-progress / deferred but tracked
-> - ⚠️ known risk with mitigation in place or planned
-> - 🟡 noted observation, low priority
->
-> When an item resolves, REMOVE it (the resolution is captured in the Decisions log + git history). Don't leave resolved items as HTML-commented-out clutter. Age-check on every relay-end: an item carried unchanged for many sessions either still matters (keep), matters only to a far milestone (fold into that roadmap entry), or doesn't (delete).
+[🚧 deferred · ⚠️ risk · 🟡 minor. Each: symbol, bold short name, what it is, what mitigates it.
+Delete an item when it resolves. Delete this hint once populated.]
 
-[Populate as risks surface. Each entry: `<symbol> **<short name>.** <description>. <mitigation or v-next plan>.`]
+## Decisions
 
----
+[Newest first. One dated block per session:
 
-## Decisions log (newest first)
+### YYYY-MM-DD — <a few words>
 
-> One dated block per session, prepended at top, no numbering. Each decision under the heading is a sub-bullet — default one line; expand to 2-4 sentences only if the one-liner would leave an obvious "why not X" unanswered. Apply the recoverability test: if it's obvious from reading the code or `git log`, leave it out. Supersede in place: a decision reversed later gets deleted or folded into the newer entry — never two live entries giving opposite guidance.
->
-> **Rotation is automatic:** when this section exceeds ~20 entries, `relay-end` archives the oldest down to ~12 into `STATE_archive/decisions-YYYY-QN.md` as part of the normal edit — not a suggestion, not gated on asking. This keeps every future `relay-start`'s full-file read cheap regardless of project age. Bloated pre-existing entries (predating this rule) can be retroactively reformatted with `relay-end`'s compaction mode.
+- <decision> (`abc123`)
 
-[New entries land here. Template:
-
-### YYYY-MM-DD — <session summary in a few words>
-
-- <decision>, over <rejected alternative>, because <reason> (`abc123`)
-- <decision 2> (`def456`)
-]
-
----
+One line each. Leave out anything `git log` or the code already answers.
+Delete this hint once populated.]
 
 ## Milestones shipped
 
-> Historical "what's done" anchor. One bullet per significant milestone (phase, sprint, feature, vertical-slice). Provides quick scan of trajectory without reading every decision-log entry.
->
-> **Rotation:** past ~15 entries, collapse the oldest into a single grouped line (e.g. "Earlier milestones (2026-01–03): core pipeline, auth, billing — see git tags"). Git history already preserves the detail losslessly; no separate archive file needed.
+[- ✅ **<name>** (YYYY-MM-DD, `abc1234`) — one or two sentences. Delete this hint once populated.]
 
-[Populate as milestones land. Format:
+## Roadmap
 
-- ✅ **<milestone name>** (YYYY-MM-DD, commit `abc1234`) — <1-2 sentence summary + key files/decisions>
-]
-
----
-
-## Roadmap (what's not yet done)
-
-> Forward-looking. Pending milestones / tasks. Strip items as they land.
-
-[Populate as scope is defined.]
-
----
+[What's not yet done. Strip entries as they land.]
 
 ## Open questions
 
-> Same discipline as watch-list: delete a question once it resolves — the answer lives in the decision that resolved it, not in a leftover "RESOLVED" note.
-
-[Populate as questions surface. Each: `🟡 **<topic>** — <question>. <context for resolution>.`]
-
----
+[Only what will shape a near-term task. Delete a question when it resolves.]
 
 ## Useful commands
 
-[Populate as tooling stabilizes.
-
-```bash
-# Run tests
-<command>
-
-# Build / run
-<command>
-
-# Lint / format / typecheck
-<command>
-```]
-
----
-
-## Session log (optional, rotate past ~10 entries)
-
-> **Most sessions don't need an entry here** — the decisions log captures the "why" with commit refs. Add a Session block ONLY when the session involved substantial prose that doesn't fit decision-block format (long debates, rejected alternatives with extensive detail, user-preference shifts).
->
-> **Rotation is automatic:** when this section exceeds ~10 entries, `relay-end` archives the oldest down to ~5 into `STATE_archive/sessions-YYYY-QN.md` as part of the normal edit.
-
-[Optional Session entries. Template:
-
-### Session N — <topic> (YYYY-MM-DD)
-
-<brief narrative — what this session accomplished, anything that needed prose to capture>
-]
+[Test, build, lint — the ones a fresh session needs.]
 ```
